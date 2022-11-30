@@ -5,7 +5,8 @@ import sys, subprocess
 
 def main():
 
-    j = subprocess.run(['az', 'account', 'get-access-token'], stdout=subprocess.PIPE).stdout.decode('utf-8') # you must login first before running this script ('az login')
+    j = subprocess.run(['az', 'account', 'get-access-token'], stdout=subprocess.PIPE).stdout.decode('utf-8')    # uncomment for resource manager APIs
+    # j = subprocess.run(['az', 'account', 'get-access-token', '--resource', 'https://restlertest1.blob.core.windows.net'], stdout=subprocess.PIPE).stdout.decode('utf-8')  #uncomment for data-plane APIs
     j = j.split()[2].replace('"','').replace(',','')
     sys.stdout.write("{'appname':{}}" + '\n' + "Authorization: Bearer " + j)
 
