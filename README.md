@@ -6,7 +6,7 @@ If you want to know what RESTler is and how to install it, see [RESTler setup](.
 
 This doc assumes basic knowledge about RESTler and focuses directly on how to set up RESler with a cloud service. We will take Azure Storage as an example cloud service.
 
-## How to compile swagger specs
+## How to compile swagger specs?
 
 Add the path to swagger specification file to the RESTler compile command (to generate RESTler grammar):
 ```
@@ -52,4 +52,19 @@ To run RESTler fuzz mode with this script run the following command:
 ```
 ./Restler fuzz --grammar_file Compile/grammar.py --dictionary_file Compile/dict.json --settings Compile/engine_settings.json --token_refresh_command "python /path/to/token_script.py" --token_refresh_interval 100
 ```
+<br/>
 
+
+
+## What if you want to run the same test (same sequences and fuzzed values) with two services?
+
+RESTler does not support this feature. However, we have implemented a workaround.
+
+Run a test/fuzz/fuzz-lean with the first service. After its completion, pass the path to the network to our script `extract_requests.py`
+```bash
+python scripts/extract_requests.py path/to/network_logs
+```
+This script will extract all the full requests made during the test (includes the fuzzed values). These requests can be tested with another service using the **replay** mode of RESTler.
+```
+./Restler replay --replay_log path/to/extracted_requests --token_refresh_command "python /path/to/token_script.py" --token_refresh_interval 100
+```
