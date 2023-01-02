@@ -45,7 +45,7 @@ To use azure APIs we need authentication tokens. There are three ways to authori
 - Shared Access Signature
 - Azure AD
 
-We use Azure AD method to get access tokens which are used to authorize requests (we faced issues in automating the other two methods with RESTler). These tokens are typically valid for 50 minutes. RESTler expects users to provide a separate python program to generate these auth tokens when running tests with RESTler. This script is invoked in a separate process by RESTler to obtain and regularly refresh tokens. RESTler will obtain new tokens by invoking the token generation script with the frequency specified in the --token_refresh_interval option.
+We use Azure AD method to get access tokens which are used to authorize requests (we faced issues in automating the other two methods with RESTler e.g., issue for [Shared Key](https://github.com/microsoft/restler-fuzzer/issues/396#issue-1043943222)). These tokens are typically valid for 50 minutes. RESTler expects users to provide a separate python program to generate these auth tokens when running tests with RESTler. This script is invoked in a separate process by RESTler to obtain and regularly refresh tokens. RESTler will obtain new tokens by invoking the token generation script with the frequency specified in the --token_refresh_interval option.
 
 For Azure Storage, the auth token generation script can be found under [scripts/](./scripts/auth_token.py).
 To run RESTler fuzz mode with this script run the following command:
@@ -64,7 +64,22 @@ Run a test/fuzz/fuzz-lean with the first service. After its completion, pass the
 ```bash
 python scripts/extract_requests.py path/to/network_logs
 ```
-This script will extract all the full requests made during the test (includes the fuzzed values). These requests can be tested with another service using the **replay** mode of RESTler.
+This script will extract all the full requests made during the test (includes the fuzzed values) and formats it in `all_reqs_replay.txt`. These requests can be tested with another service using the **replay** mode of RESTler.
 ```
-./Restler replay --replay_log path/to/extracted_requests --token_refresh_command "python /path/to/token_script.py" --token_refresh_interval 100
+./Restler replay --replay_log all_reqs_replay.txt --token_refresh_command "python /path/to/token_script.py" --token_refresh_interval 100
 ```
+
+After the replay is complete, locate network logs under `replay/`. All the requests and their responses can be found in these logs.
+
+To summarise the results, run `Restler.RequestsAnalyzer`.
+
+**Note:** Before running, open the network logs and add the following line (newline) after the Authorization token line:
+```Generation-1: Rendering Sequence-1```
+
+To run the analyzer, run:
+
+```
+./Restler.ResultsAnalyzer analyze replay/path/to/network_logs --output_dir .
+```
+
+This will generate runSummary.json and errorBucket.json. 
