@@ -8,9 +8,9 @@ This doc assumes basic knowledge about RESTler and focuses directly on how to se
 
 ## How to compile swagger specs?
 
-Add the path to swagger specification file to the RESTler compile command (to generate RESTler grammar):
+Pass the swagger specification file path to the RESTler compile command:
 ```
-./Restler compile --api_spec ../swagger.json.
+./Restler compile --api_spec ../swagger.json
 ```
 
 This command creates a new sub-directory **Compile** where the results of the compilation are saved in several files:
@@ -21,9 +21,12 @@ This command creates a new sub-directory **Compile** where the results of the co
 
 ### Custom Values
 
-After compiling these specs to generate RESTler grammar, there are a few edits that are required in the dict.json file. We need to set custom parameters ("restler_custom_payload") according to our Azure account for the APIs otherwise we will get a Bad Request (400) error. For example "subscriptionId", "resourceGroupName", "accountName”, etc in the following endpoint.
+Before running the tests, you might need to make a few edits in the dict.json file to define custom values for some parameters and headers (depends on the endpoints being tested).
 
-Example endpoint from Azure control plane: `/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Storage/storageAccounts/{accountName}/blobServices/default/containers/{containerName}/immutabilityPolicies/{immutabilityPolicyName}`
+For Azure Storage control plane APIs, you must define "subscriptionId", "resourceGroupName", "accountName”, etc according to your Azure account, otherwise, the request will always fail as a Bad Request. An example endpoint is given below:
+
+`/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Storage/storageAccounts/{accountName}/blobServices/default/containers/{containerName}/immutabilityPolicies/{immutabilityPolicyName}`
+
 
 Before directly making these changes to the Compile/dict.json file. The following method is recommended:
 - Copy the config.json and dict.json (and possibly engine_settings.json if you need to modify them) out of this Compile folder.
@@ -47,7 +50,7 @@ To use azure APIs we need authentication tokens. There are three ways to authori
 
 We use Azure AD method to get access tokens which are used to authorize requests (we faced issues in automating the other two methods with RESTler e.g., issue for [Shared Key](https://github.com/microsoft/restler-fuzzer/issues/396#issue-1043943222)). These tokens are typically valid for 50 minutes. RESTler expects users to provide a separate python program to generate these auth tokens when running tests with RESTler. This script is invoked in a separate process by RESTler to obtain and regularly refresh tokens. RESTler will obtain new tokens by invoking the token generation script with the frequency specified in the --token_refresh_interval option.
 
-For Azure Storage, the auth token generation script can be found under [scripts/](./scripts/auth_token.py).
+For Azure Storage, the auth token generation script can be found under [scripts](./scripts/auth_token.py).
 To run RESTler fuzz mode with this script run the following command:
 ```
 ./Restler fuzz --grammar_file Compile/grammar.py --dictionary_file Compile/dict.json --settings Compile/engine_settings.json --token_refresh_command "python /path/to/token_script.py" --token_refresh_interval 100
@@ -60,7 +63,7 @@ To run RESTler fuzz mode with this script run the following command:
 
 RESTler does not support this feature. However, we have implemented a workaround.
 
-Run a test/fuzz/fuzz-lean with the first service. After its completion, pass the path to the network to our script `extract_requests.py`
+Run a test/fuzz/fuzz-lean with the first service. When it completes, pass the network logs path to the script `extract_requests.py` in the [scripts](./scripts) folder.
 ```bash
 python scripts/extract_requests.py path/to/network_logs
 ```
@@ -69,9 +72,9 @@ This script will extract all the full requests made during the test (includes th
 ./Restler replay --replay_log all_reqs_replay.txt --token_refresh_command "python /path/to/token_script.py" --token_refresh_interval 100
 ```
 
-After the replay is complete, locate network logs under `replay/`. All the requests and their responses can be found in these logs.
+After the replay is complete, locate network logs in the **replay** directory. All the requests and their responses can be found in these logs.
 
-To summarise the results, run `Restler.RequestsAnalyzer`.
+To summarise the results, run **Restler.RequestsAnalyzer**.
 
 **Note:** Before running, open the network logs and add the following line (newline) after the Authorization token line:
 ```Generation-1: Rendering Sequence-1```
